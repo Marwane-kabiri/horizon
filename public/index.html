@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Horizon — Organize tasks by time, not just by list</title>
+<meta name="description" content="Horizon is a premium task manager that organizes your work by time horizon — from today to your long‑term goals." />
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- Ambient gradient mesh background, purely decorative -->
+<div class="bg-mesh" aria-hidden="true"></div>
+
+<a class="skip-link" href="#main">Skip to content</a>
+
+<!-- ============ NAVBAR ============ -->
+<header class="navbar">
+  <div class="navbar-inner">
+
+    <div class="brand">
+      <svg class="brand-mark" width="30" height="30" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs>
+          <linearGradient id="brandGrad" x1="0" y1="0" x2="24" y2="24" gradientUnits="userSpaceOnUse">
+            <stop offset="0" stop-color="#8B5CF6"/>
+            <stop offset="1" stop-color="#22D3EE"/>
+          </linearGradient>
+        </defs>
+        <rect x="1" y="1" width="22" height="22" rx="7" fill="url(#brandGrad)"/>
+        <path d="M7.5 12.5l3 3 6-6" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="brand-name">Horizon</span>
+    </div>
+
+    <div class="navbar-search" id="navSearch" hidden>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.8"/>
+        <line x1="21" y1="21" x2="16.65" y2="16.65" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+      </svg>
+      <input type="search" id="searchInput" placeholder="Search your tasks…" aria-label="Search tasks" autocomplete="off" />
+    </div>
+
+    <div class="navbar-actions">
+      <!-- Shown only while logged in -->
+      <div class="user-area" id="userArea" role="group" aria-label="Account" hidden>
+        <span class="user-avatar" id="userAvatar" aria-hidden="true"></span>
+        <span class="user-email" id="userEmail"></span>
+        <button type="button" class="btn btn-ghost btn-small logout-btn" id="logoutBtn" aria-label="Log out">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9 4.5H6.5A2 2 0 0 0 4.5 6.5v11a2 2 0 0 0 2 2H9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M14 8l4 4-4 4M18 12H9.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span class="logout-label">Log out</span>
+        </button>
+      </div>
+      <button id="themeToggle" class="theme-toggle" type="button" aria-label="Switch to light mode" aria-pressed="false">
+        <svg class="icon-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <circle cx="12" cy="12" r="4.2" stroke="currentColor" stroke-width="1.8"/>
+          <g stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+            <line x1="12" y1="1.5" x2="12" y2="4.2"/>
+            <line x1="12" y1="19.8" x2="12" y2="22.5"/>
+            <line x1="1.5" y1="12" x2="4.2" y2="12"/>
+            <line x1="19.8" y1="12" x2="22.5" y2="12"/>
+            <line x1="4.4" y1="4.4" x2="6.3" y2="6.3"/>
+            <line x1="17.7" y1="17.7" x2="19.6" y2="19.6"/>
+            <line x1="4.4" y1="19.6" x2="6.3" y2="17.7"/>
+            <line x1="17.7" y1="6.3" x2="19.6" y2="4.4"/>
+          </g>
+        </svg>
+        <svg class="icon-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M20.5 14.2A8.6 8.6 0 1 1 9.8 3.5a7 7 0 0 0 10.7 10.7Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </div>
+
+  </div>
+</header>
+
+<!-- ============ LOADING / ERROR SCREENS ============ -->
+<div class="state-screen" id="appLoading" role="status" aria-live="polite">
+  <span class="spinner" aria-hidden="true"></span>
+  <p id="appLoadingText">Loading…</p>
+</div>
+
+<div class="state-screen" id="loadError" hidden>
+  <p id="loadErrorText" role="alert">Something went wrong. Please try again.</p>
+  <button type="button" class="btn btn-primary btn-small" id="loadRetry">Try again</button>
+</div>
+
+<!-- ============ LOGIN / REGISTER ============ -->
+<main id="authMain" class="auth-main" hidden>
+  <div class="auth-card">
+    <div class="auth-horizon" aria-hidden="true"></div>
+
+    <p class="auth-notice" id="authNotice" role="status" hidden></p>
+
+    <!-- Log in -->
+    <div id="loginPane">
+      <div class="auth-head">
+        <svg width="44" height="44" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <rect x="1" y="1" width="22" height="22" rx="7" fill="url(#brandGrad)"/>
+          <path d="M7.5 12.5l3 3 6-6" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <h1 id="loginTitle">Log in to Horizon</h1>
+        <p>Pick up where you left off.</p>
+      </div>
+
+      <form class="auth-form" id="loginForm" aria-labelledby="loginTitle" novalidate>
+        <div class="field">
+          <label for="loginEmail">Email</label>
+          <input type="email" id="loginEmail" name="email" autocomplete="email" inputmode="email" placeholder="you@example.com" aria-describedby="loginError" required />
+        </div>
+        <div class="field">
+          <label for="loginPassword">Password</label>
+          <input type="password" id="loginPassword" name="password" autocomplete="current-password" aria-describedby="loginError" required />
+        </div>
+        <p class="auth-error" id="loginError" role="alert"></p>
+        <button type="submit" class="btn btn-primary btn-block" id="loginSubmit">Log in</button>
+      </form>
+
+      <p class="auth-switch">New to Horizon? <button type="button" class="link-btn" data-auth-mode="register">Create an account</button></p>
+    </div>
+
+    <!-- Create account -->
+    <div id="registerPane" hidden>
+      <div class="auth-head">
+        <svg width="44" height="44" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <rect x="1" y="1" width="22" height="22" rx="7" fill="url(#brandGrad)"/>
+          <path d="M7.5 12.5l3 3 6-6" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <h1 id="registerTitle">Create your account</h1>
+        <p>Your tasks, from today to your long-term goals.</p>
+      </div>
+
+      <form class="auth-form" id="registerForm" aria-labelledby="registerTitle" novalidate>
+        <div class="field">
+          <label for="registerEmail">Email</label>
+          <input type="email" id="registerEmail" name="email" autocomplete="email" inputmode="email" placeholder="you@example.com" aria-describedby="registerError" required />
+        </div>
+        <div class="field">
+          <label for="registerPassword">Password</label>
+          <input type="password" id="registerPassword" name="password" autocomplete="new-password" minlength="8" aria-describedby="registerHint registerError" required />
+          <span class="field-hint" id="registerHint">At least 8 characters.</span>
+        </div>
+        <div class="field">
+          <label for="registerConfirm">Confirm password</label>
+          <input type="password" id="registerConfirm" name="confirmPassword" autocomplete="new-password" aria-describedby="registerError" required />
+        </div>
+        <p class="auth-error" id="registerError" role="alert"></p>
+        <button type="submit" class="btn btn-primary btn-block" id="registerSubmit">Create account</button>
+      </form>
+
+      <p class="auth-switch">Already have an account? <button type="button" class="link-btn" data-auth-mode="login">Log in</button></p>
+    </div>
+  </div>
+</main>
+
+<main id="main" hidden>
+
+  <!-- ============ STATS DASHBOARD ============ -->
+  <section class="stats-section" aria-label="Task statistics">
+    <div class="stats-grid">
+
+      <div class="stat-card">
+        <div class="stat-icon stat-icon--total" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="3.5" y="3.5" width="17" height="17" rx="4" stroke="currentColor" stroke-width="1.7"/><line x1="8" y1="9" x2="16" y2="9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><line x1="8" y1="13.2" x2="16" y2="13.2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><line x1="8" y1="17.4" x2="12.5" y2="17.4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+        </div>
+        <div class="stat-copy">
+          <span class="stat-value" id="statTotal">0</span>
+          <span class="stat-label">Total tasks</span>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon stat-icon--done" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.7"/><polyline points="8,12.3 10.8,15 16,9.3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+        </div>
+        <div class="stat-copy">
+          <span class="stat-value" id="statCompleted">0</span>
+          <span class="stat-label">Completed</span>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon stat-icon--pending" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.7"/><line x1="12" y1="7.2" x2="12" y2="12" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><line x1="12" y1="12" x2="15.4" y2="14" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+        </div>
+        <div class="stat-copy">
+          <span class="stat-value" id="statPending">0</span>
+          <span class="stat-label">Pending</span>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon stat-icon--priority" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M6 3v18" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M6 4h11l-3 4 3 4H6" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" fill="none"/></svg>
+        </div>
+        <div class="stat-copy">
+          <span class="stat-value" id="statHighPriority">0</span>
+          <span class="stat-label">High priority</span>
+        </div>
+      </div>
+
+      <div class="stat-card stat-card--ring">
+        <div class="progress-ring" aria-hidden="true">
+          <svg width="64" height="64" viewBox="0 0 64 64">
+            <circle cx="32" cy="32" r="27" fill="none" stroke="var(--glass-border)" stroke-width="6"/>
+            <circle id="ringProgress" cx="32" cy="32" r="27" fill="none" stroke="url(#ringGrad)" stroke-width="6" stroke-linecap="round" stroke-dasharray="169.6" stroke-dashoffset="169.6" transform="rotate(-90 32 32)"/>
+            <defs>
+              <linearGradient id="ringGrad" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+                <stop offset="0" stop-color="#8B5CF6"/>
+                <stop offset="1" stop-color="#22D3EE"/>
+              </linearGradient>
+            </defs>
+          </svg>
+          <span class="progress-ring-value" id="statPercent">0%</span>
+        </div>
+        <span class="stat-label">Overall progress</span>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============ HORIZON QUICK-NAV RAIL ============ -->
+  <nav class="horizon-rail-wrap" aria-label="Jump to a time horizon">
+    <div class="horizon-rail" id="horizonRail"></div>
+  </nav>
+
+  <!-- ============ TASK COMPOSER ============ -->
+  <section class="composer" id="composer">
+    <button class="composer-toggle" id="composerToggle" type="button" aria-expanded="false" aria-controls="composerForm">
+      <span class="plus-badge" aria-hidden="true">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><line x1="12" y1="5" x2="12" y2="19" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+      </span>
+      <span id="composerToggleLabel">New task</span>
+    </button>
+
+    <form class="composer-form" id="composerForm" hidden novalidate>
+      <input type="hidden" id="editingId" value="" />
+
+      <div class="field field--grow">
+        <label for="taskTitle">Title</label>
+        <input type="text" id="taskTitle" name="title" placeholder="What do you need to do?" maxlength="120" required />
+      </div>
+
+      <div class="field field--grow">
+        <label for="taskDescription">Description <span class="optional">(optional)</span></label>
+        <textarea id="taskDescription" name="description" placeholder="Add any useful detail…" rows="2" maxlength="500"></textarea>
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label for="taskDueDate">Due date</label>
+          <input type="date" id="taskDueDate" name="dueDate" />
+        </div>
+
+        <div class="field">
+          <label for="taskPriority">Priority</label>
+          <select id="taskPriority" name="priority">
+            <option value="low">Low</option>
+            <option value="medium" selected>Medium</option>
+            <option value="high">High</option>
+            <option value="critical">Critical</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="taskCategory">Time horizon</label>
+          <select id="taskCategory" name="category"></select>
+        </div>
+      </div>
+
+      <div class="composer-actions">
+        <span class="form-error" id="formError" role="alert"></span>
+        <button type="button" class="btn btn-ghost" id="composerCancel">Cancel</button>
+        <button type="submit" class="btn btn-primary" id="composerSubmit">Add task</button>
+      </div>
+    </form>
+  </section>
+
+  <!-- ============ FILTER TOOLBAR ============ -->
+  <section class="toolbar" aria-label="Filter and sort tasks">
+    <div class="toolbar-group" id="statusChips" role="group" aria-label="Filter by status">
+      <button type="button" class="chip is-active" data-status="all">All</button>
+      <button type="button" class="chip" data-status="active">Active</button>
+      <button type="button" class="chip" data-status="completed">Completed</button>
+    </div>
+
+    <div class="toolbar-group toolbar-group--end">
+      <div class="select-wrap">
+        <label for="priorityFilter" class="sr-only">Filter by priority</label>
+        <select id="priorityFilter">
+          <option value="all">All priorities</option>
+          <option value="critical">Critical</option>
+          <option value="high">High</option>
+          <option value="medium">Medium</option>
+          <option value="low">Low</option>
+        </select>
+      </div>
+
+      <div class="select-wrap">
+        <label for="sortSelect" class="sr-only">Sort tasks</label>
+        <select id="sortSelect">
+          <option value="dueAsc">Due date — soonest</option>
+          <option value="dueDesc">Due date — furthest</option>
+          <option value="createdDesc">Recently created</option>
+          <option value="createdAsc">Oldest created</option>
+          <option value="priority">Priority — highest first</option>
+        </select>
+      </div>
+
+      <button type="button" class="btn btn-ghost btn-small" id="clearFilters" hidden>Clear filters</button>
+    </div>
+  </section>
+
+  <!-- ============ BOARD (category sections render here) ============ -->
+  <div class="board" id="board"></div>
+
+  <!-- Global empty state — no tasks exist at all -->
+  <div class="global-empty" id="globalEmpty" hidden>
+    <svg width="120" height="120" viewBox="0 0 120 120" fill="none" aria-hidden="true">
+      <circle cx="60" cy="60" r="58" stroke="var(--glass-border)" stroke-width="2" stroke-dasharray="4 6"/>
+      <path d="M40 63l13 13 27-27" stroke="url(#emptyGrad)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      <defs>
+        <linearGradient id="emptyGrad" x1="40" y1="49" x2="80" y2="76" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stop-color="#8B5CF6"/>
+          <stop offset="1" stop-color="#22D3EE"/>
+        </linearGradient>
+      </defs>
+    </svg>
+    <h2>Your horizon is clear</h2>
+    <p>Nothing on the list yet. Add your first task — today's errand or a ten‑year goal — and watch it find its place.</p>
+    <button type="button" class="btn btn-primary" id="globalEmptyAdd">Add your first task</button>
+  </div>
+
+  <!-- No search/filter results -->
+  <div class="no-results" id="noResults" hidden>
+    <p>No tasks match your search and filters.</p>
+    <button type="button" class="btn btn-ghost btn-small" id="noResultsClear">Clear filters</button>
+  </div>
+
+</main>
+
+<!-- ============ FOOTER ============ -->
+<footer class="site-footer">
+  <div class="site-footer-inner">
+    <div class="footer-brand">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <rect x="1" y="1" width="22" height="22" rx="7" fill="url(#brandGrad)"/>
+        <path d="M7.5 12.5l3 3 6-6" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span>Horizon</span>
+    </div>
+    <p class="footer-note">Your tasks are securely stored in your account.</p>
+    <p class="footer-copy">© <span id="footerYear"></span> Horizon. Built for people who think in timelines.</p>
+  </div>
+</footer>
+
+<!-- ============ TOASTS ============ -->
+<div class="toast-container" id="toastContainer" aria-live="polite" aria-atomic="true"></div>
+
+<!-- ============ CONFIRM DELETE DIALOG ============ -->
+<div class="modal-overlay" id="confirmOverlay" hidden aria-hidden="true">
+  <div class="modal confirm-modal" role="alertdialog" aria-modal="true" aria-labelledby="confirmTitle" aria-describedby="confirmMessage">
+    <div class="confirm-icon" aria-hidden="true">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><polygon points="12,3 22,20 2,20" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><line x1="12" y1="9.5" x2="12" y2="13.8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="12" cy="16.6" r="1" fill="currentColor"/></svg>
+    </div>
+    <h3 id="confirmTitle">Delete this task?</h3>
+    <p id="confirmMessage">This can't be undone. The task will be permanently removed from your list.</p>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-ghost" id="confirmCancel">Cancel</button>
+      <button type="button" class="btn btn-danger" id="confirmDelete">Delete task</button>
+    </div>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
